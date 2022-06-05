@@ -29,6 +29,7 @@ mhddos_proxy встановлюєте як зазвичай, шлях до нь�
 - створюємо локального користувача (adduser serge)
 - перекидаємо ключи (install -d -o serge -g serge -m 700 ~serge/.ssh; install -o serge -g serge -m 600 /root/.ssh/authorized_keys ~serge/.ssh)
 - блокуємо PermitRootLogin в /etc/ssh/sshd_config
+- додаємо безпарольний sudo (EDITOR=vim visudo /etc/sudoers.d/serge; serge ALL=(ALL) NOPASSWD: ALL)
 - додаємо цей сервер в hosts
 - запускаєм ansible (ansible-playbook deploy.yaml)
 - voi-la
