@@ -148,6 +148,7 @@ which numfmt >/dev/null || die "numfmt not found!"
 which wondershaper >/dev/null || die "wondershaper not found!"
 which wget >/dev/null   || die "wget not found!"
 which diff >/dev/null   || die "diff not found!"
+which jq >/dev/null     || die "jq not found!"
 
 [ $(id -u) -eq 0 ] || SUDO=sudo
 
