@@ -1,0 +1,11 @@
+[Unit]
+After=network.target network-online.target
+
+[Service]
+ExecStart=/home/serge/bin/ddos
+User=serge
+
+[Install]
+WantedBy=default.target
+
+

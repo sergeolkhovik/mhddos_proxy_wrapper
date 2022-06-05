@@ -1,0 +1,11 @@
+[Unit]
+After=network.target network-online.target
+
+[Service]
+ExecStart={{ ddos }}
+User={{ ansible_user }}
+
+[Install]
+WantedBy=default.target
+
+
