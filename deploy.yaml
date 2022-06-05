@@ -88,6 +88,12 @@
         - restart ddos
       become: yes
 
+    - name: ddos service
+      service: name=ddos.service enabled=yes
+      notify:
+        - restart ddos
+      become: yes
+
     - name: logrotate conf
       template: src=logrotate.j2 dest="/etc/logrotate.d/{{ ansible_user }}" mode=644
       become: yes
