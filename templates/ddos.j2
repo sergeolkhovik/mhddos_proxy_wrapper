@@ -40,7 +40,7 @@ EOF
 die() {
     echo $* 1>&2
     [ -n "$LOG" ] && echo $* >> "$LOG"
-    [ $VRB -eq 0 ] && echo $* | mail -s "$SBJ" $USER
+    [ $VRB -eq 0 ] && which mail >/dev/null && echo $* | mail -s "$SBJ" $USER
 }
 
 out() {
