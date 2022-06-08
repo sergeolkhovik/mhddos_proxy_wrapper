@@ -72,8 +72,8 @@ update_limit() {
     TRF=$(vnstat -i $IFC --json m 1 | jq ".interfaces[] | select(.name == \"$IFC\") | .traffic.month[0].tx")
     [ -n "$TRF" ] || (cleanup; die "Failed to get traffic value: $TRF")
     #out "Traffic $(numfmt --to=iec $TRF) vs $LIM"
-    LDM=$(date -d "-$(date +%d) days  month" '+%d')
-    TOD=$(date '+%d')
+    LDM=$(date -d "-$(date '+%d') days  month" '+%d' | sed 's/^0//')
+    TOD=$(date '+%d' | sed 's/^0//')
     DAYS=$(($LDM - $TOD + 1))
     out "Days left in this month: $DAYS"
     TRL=$(( ($LMV-$TRF)/1024/($LDM-$TOD+1)/86400*8 ))
