@@ -5,7 +5,7 @@ VRB=0
 IFC="{{ iface }}"
 LIM="{{ ddos_limit }}"
 MIN=100
-UNL=102400
+#UNL=102400
 CFG="{{ dd_config }}"
 LFG="/tmp/targets.txt"
 LFM=
@@ -51,21 +51,21 @@ out() {
 check_limit() {
     TRF=$(vnstat -i $IFC --json m 1 | jq ".interfaces[] | select(.name == \"$IFC\") | .traffic.month[0].tx")
     [ -n "$TRF" ] || die "Failed to get traffic value: $TRF"
-    [ $VRB -gt 0 ] && echo "Traffic $(numfmt --to=iec $TRF) vs $LIM"
+    [ $VRB -gt 0 ] && out "Traffic $(numfmt --to=iec $TRF) vs $LIM"
     [ $TRF -ge $LMV ] && return 1
     return 0
 }
 
 reset_limit() {
     out "Reseting all limits.."
-    #[ $DRY -eq 0 ] && tc qdisc del dev $IFC root
-    [ $DRY -eq 0 ] && $SUDO wondershaper clear $IFC
+    [ $DRY -eq 0 ] && $SUDO tc qdisc del dev $IFC root
+    #[ $DRY -eq 0 ] && $SUDO wondershaper clear $IFC
 }
 
 show_limit() {
-    out "Actual limit values:"
-    #tc -s qdisc ls dev $IFC
-    $SUDO wondershaper $IFC
+    echo "Actual limit values:"
+    $SUDO tc -s qdisc ls dev $IFC
+    #$SUDO wondershaper $IFC
 }
 
 update_limit() {
@@ -79,7 +79,8 @@ update_limit() {
     TRL=$(( ($LMV-$TRF)/1024/($LDM-$TOD+1)/86400*8 ))
     [ $TRL -lt $MIN ] && out "Adjusting limit $TRL up to $MIN"
     out "New limit: ${TRL}k/s"
-    [ $DRY -eq 0 ] && $SUDO wondershaper $IFC $UNL $TRL
+    #[ $DRY -eq 0 ] && $SUDO wondershaper $IFC $UNL $TRL
+    [ $DRY -eq 0 ] && $SUDO tc qdisc add dev $IFC root tbf rate ${TRL}kbit burst 16kbit latency 1ms
 }
 
 run_mhdd() {
@@ -145,7 +146,8 @@ shift $((OPTIND - 1))
 
 which vnstat >/dev/null || die "vnstat not found!"
 which numfmt >/dev/null || die "numfmt not found!"
-which wondershaper >/dev/null || die "wondershaper not found!"
+#which wondershaper >/dev/null || die "wondershaper not found!"
+which tc >/dev/null     || die "tc not found!"
 which wget >/dev/null   || die "wget not found!"
 which diff >/dev/null   || die "diff not found!"
 which jq >/dev/null     || die "jq not found!"
