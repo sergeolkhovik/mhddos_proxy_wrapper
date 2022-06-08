@@ -80,6 +80,7 @@ update_limit() {
     [ $TRL -lt $MIN ] && out "Adjusting limit $TRL up to $MIN"
     out "New limit: ${TRL}k/s"
     #[ $DRY -eq 0 ] && $SUDO wondershaper $IFC $UNL $TRL
+    [ $DRY -eq 0 ] && $SUDO tc qdisc del dev $IFC root
     [ $DRY -eq 0 ] && $SUDO tc qdisc add dev $IFC root tbf rate ${TRL}kbit burst 16kbit latency 1ms
 }
 
