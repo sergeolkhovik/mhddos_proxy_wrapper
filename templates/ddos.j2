@@ -78,6 +78,8 @@ update_limit() {
     out "Days left in this month: $DAYS"
     TRL=$(( ($LMV-$TRF)/1024/($LDM-$TOD+1)/86400*8 ))
     [ $TRL -lt $MIN ] && out "Adjusting limit $TRL up to $MIN"
+    #PKL=$(( $TRL * 3 / 2 ))
+    #out "New limit: ${TRL}k/s, peak: ${PKL}k/s"
     out "New limit: ${TRL}k/s"
     #[ $DRY -eq 0 ] && $SUDO wondershaper $IFC $UNL $TRL
     [ $DRY -eq 0 ] && $SUDO tc qdisc del dev $IFC root
@@ -88,7 +90,7 @@ run_mhdd() {
     if [ -z "$PID" ]; then
         XFG=$CFG
         [ -f "$LFG" ] && XFG=$LFG
-        [ $VRB -gt 0 ] && echo "Launching MHDDOS proxy: {{ dd_cmd }} $THR -c $XFG, log file $LGM"
+        [ $VRB -gt 0 ] && out "Launching MHDDOS proxy: {{ dd_cmd }} $THR -c $XFG, log file $LGM"
         {{ dd_cmd }} $THR -c $XFG >> "$LGM" 2>&1 &
         PID=$!
     fi
@@ -96,7 +98,7 @@ run_mhdd() {
 
 stop_mhdd() {
     if [ -n "$PID" ]; then
-        [ $VRB -gt 0 ] && echo "Stopping MHDDOS proxy"
+        [ $VRB -gt 0 ] && out "Stopping MHDDOS proxy"
         kill -0 $PID
         PID=
     fi
