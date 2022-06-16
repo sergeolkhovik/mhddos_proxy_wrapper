@@ -90,7 +90,7 @@ run_mhdd() {
     if [ -z "$PID" ]; then
         XFG=$CFG
         [ -f "$LFG" ] && XFG=$LFG
-        [ $VRB -gt 0 ] && out "Launching MHDDOS proxy: {{ dd_cmd }} $THR -c $XFG, log file $LGM"
+        out "Launching MHDDOS proxy: {{ dd_cmd }} $THR -c $XFG, log file $LGM"
         {{ dd_cmd }} $THR -c $XFG >> "$LGM" 2>&1 &
         PID=$!
     fi
@@ -98,7 +98,7 @@ run_mhdd() {
 
 stop_mhdd() {
     if [ -n "$PID" ]; then
-        [ $VRB -gt 0 ] && out "Stopping MHDDOS proxy"
+        out "Stopping MHDDOS proxy"
         kill -0 $PID
         PID=
     fi
