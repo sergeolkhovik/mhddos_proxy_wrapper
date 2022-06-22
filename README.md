@@ -19,7 +19,7 @@ mhddos_proxy встановлюєте як зазвичай, шлях до нь�
 - vnstat
 - coreutils (numfmt)
 - mailutils
-- wondershaper
+- wondershaper (https://github.com/magnific0/wondershaper)
 - wget
 - diffutils
 - jq
