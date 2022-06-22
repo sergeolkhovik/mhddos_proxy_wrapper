@@ -5,7 +5,6 @@ VRB=0
 IFC="{{ iface }}"
 LIM="{{ ddos_limit }}"
 MIN=100
-#UNL=102400
 CFG="{{ dd_config }}"
 LFG="/tmp/targets.txt"
 LFM=
@@ -16,6 +15,7 @@ LGM="{{ dd_log }}"
 SBJ="$(basename $0) Failure"
 PID=
 DRY=0
+WSH=0
 SUDO=
 
 help() {
@@ -30,6 +30,8 @@ Usage: $(basename $0) [options]
  -t threads ($THR)
  -L log ($LOG)
  -M MHDDOS log ($LGM)
+ -T - force tc for traffic shaping
+ -W - force wondershaper (https://github.com/magnific0/wondershaper)
  -q
  -v
  -h
@@ -58,14 +60,22 @@ check_limit() {
 
 reset_limit() {
     out "Reseting all limits.."
-    [ $DRY -eq 0 ] && $SUDO tc qdisc del dev $IFC root
-    #[ $DRY -eq 0 ] && $SUDO wondershaper clear $IFC
+    if [ $DRY -eq 0 ]; then
+        if [ $WSH -gt 0 ]; then
+            $SUDO wondershaper -c -a $IFC
+        else
+            $SUDO tc qdisc del dev $IFC root
+        fi
+    fi
 }
 
 show_limit() {
     echo "Actual limit values:"
-    $SUDO tc -s qdisc ls dev $IFC
-    #$SUDO wondershaper $IFC
+    if [ $WSH -gt 0 ]; then
+        $SUDO wondershaper -s -a $IFC
+    else
+        $SUDO tc -s qdisc ls dev $IFC
+    fi
 }
 
 update_limit() {
@@ -81,9 +91,14 @@ update_limit() {
     #PKL=$(( $TRL * 3 / 2 ))
     #out "New limit: ${TRL}k/s, peak: ${PKL}k/s"
     out "New limit: ${TRL}k/s"
-    #[ $DRY -eq 0 ] && $SUDO wondershaper $IFC $UNL $TRL
-    [ $DRY -eq 0 ] && $SUDO tc qdisc del dev $IFC root
-    [ $DRY -eq 0 ] && $SUDO tc qdisc add dev $IFC root tbf rate ${TRL}kbit burst 16kbit latency 1ms
+    if [ $DRY -eq 0 ]; then
+        if [ $WSH -gt 0 ]; then
+            $SUDO wondershaper -a $IFC -u $TRL
+        else
+            $SUDO tc qdisc del dev $IFC root
+            $SUDO tc qdisc add dev $IFC root tbf rate ${TRL}kbit burst 16kbit latency 1ms
+        fi
+    fi
 }
 
 run_mhdd() {
@@ -128,7 +143,7 @@ cleanup() {
 }
 
 tty -s && VRB=1
-while getopts ":qvhc:l:L:m:M:ns:RV" opt; do
+while getopts ":qvhc:l:L:m:M:ns:RVTW" opt; do
     case $opt in
         R) reset_limit; exit ;;
         V) show_limit;  exit ;;
@@ -139,6 +154,8 @@ while getopts ":qvhc:l:L:m:M:ns:RV" opt; do
         n) DRY=1 ;;
         s) SLP=$OPTARG ;;
         t) THR=$OPTARG ;;
+        T) WSH=0 ;;
+        W) WSH=1 ;;
         v) VRB=1 ;;
         q) VRB=0 ;;
         h) help  ;;
@@ -149,8 +166,14 @@ shift $((OPTIND - 1))
 
 which vnstat >/dev/null || die "vnstat not found!"
 which numfmt >/dev/null || die "numfmt not found!"
-#which wondershaper >/dev/null || die "wondershaper not found!"
-which tc >/dev/null     || die "tc not found!"
+if [ $WSH -gt 0 ]; then
+    which wondershaper >/dev/null || die "wondershaper not found!"
+else
+    which wondershaper >/dev/null && WSH=1
+fi
+if [ $WSH -eq 0 ]; then
+    which tc >/dev/null     || die "tc not found!"
+fi
 which wget >/dev/null   || die "wget not found!"
 which diff >/dev/null   || die "diff not found!"
 which jq >/dev/null     || die "jq not found!"

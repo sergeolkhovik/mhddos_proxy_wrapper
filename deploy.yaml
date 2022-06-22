@@ -13,6 +13,8 @@
   vars:
     home: "{{ lookup('env', 'HOME') }}"
     logs: "{{ home }}/log"
+    ws_url: "https://github.com/magnific0/wondershaper"
+    ws_local: "{{ home }}/src/wondershaper"
     dd_url: "https://github.com/porthole-ascend-cinnamon/mhddos_proxy"
     dd_local: "{{ home }}/src/mhddos_proxy"
     dd_config: "https://targets.cyberarmy.com.ua/targets.txt"
@@ -38,11 +40,21 @@
           - mailutils
           - python3
           - python3-pip
-          - wondershaper
           - wget
           - diffutils
           - logrotate
         install_recommends: no
+      become: yes
+
+    - name: Remove packages
+      apt:
+        name: wondershaper
+        state: absent
+      become: yes
+
+    - name: Set TZ
+      timezone:
+        name: Europe/Kiev
       become: yes
 
     - name: create directories
@@ -62,11 +74,26 @@
         state: started
       become: yes
 
+    - name: wondershaper sources clone/pull
+      ansible.builtin.git:
+        repo: "{{ ws_url }}"
+        dest: "{{ ws_local }}"
+        #update: no
+        #force: yes
+
+    - name: install wondershaper
+      ansible.builtin.file:
+        src: "{{ ws_local }}/wondershaper"
+        dest: "/usr/local/bin/wondershaper"
+        state: link
+      become: yes
+
     - name: ddos sources clone/pull
       ansible.builtin.git:
         repo: "{{ dd_url }}"
         dest: "{{ dd_local }}"
         #update: no
+        force: yes
       register: ddos_sources
 
     - name: ddos requirements
